@@ -29,10 +29,6 @@ const Login: React.FC = () => {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'demo@fraudshield.ai',
-      password: 'demo123',
-    },
   });
 
   const onSubmit = async (data: LoginFormData) => {
