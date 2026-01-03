@@ -7,7 +7,7 @@
 *.bin
 
 # ML / Pathway
-data/
+
 cache/
 
 # Node
