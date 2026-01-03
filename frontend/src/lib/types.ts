@@ -16,6 +16,7 @@ export interface Transaction {
 }
 
 export interface TransactionFormData {
+  step: number;
   type: TransactionType;
   amount: number;
   nameOrig: string;

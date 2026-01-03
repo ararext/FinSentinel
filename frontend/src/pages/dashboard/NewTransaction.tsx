@@ -10,6 +10,10 @@ import { useToastNotification } from '@/components/Toast';
 import { PlusCircle } from 'lucide-react';
 
 const transactionSchema = z.object({
+  step: z
+    .number({ invalid_type_error: 'Step is required' })
+    .int('Step must be an integer')
+    .min(1, 'Step must be at least 1'),
   type: z.enum(['PAYMENT', 'TRANSFER', 'CASH_OUT', 'CASH_IN', 'DEBIT']),
   amount: z.number().positive('Amount must be positive'),
   nameOrig: z.string().min(1, 'Sender name is required'),
@@ -42,6 +46,7 @@ const NewTransaction: React.FC = () => {
   } = useForm<FormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
+      step: 1,
       type: 'TRANSFER',
       amount: 0,
       nameOrig: '',
@@ -57,6 +62,7 @@ const NewTransaction: React.FC = () => {
     setIsSubmitting(true);
     try {
       const formData: TransactionFormData = {
+        step: data.step,
         type: data.type,
         amount: data.amount,
         nameOrig: data.nameOrig,
@@ -92,53 +98,65 @@ const NewTransaction: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Transaction Type */}
+        {/* Transaction Metadata */}
         <div className="p-6 rounded-2xl bg-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">Transaction Type</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {transactionTypes.map((type) => (
-              <label
-                key={type.value}
-                className="relative flex items-center justify-center p-3 rounded-xl border border-border cursor-pointer transition-all hover:border-accent/50 has-[:checked]:border-accent has-[:checked]:bg-accent/5"
-              >
-                <input
-                  type="radio"
-                  {...register('type')}
-                  value={type.value}
-                  className="absolute opacity-0"
-                />
-                <span className="text-sm font-medium">{type.label}</span>
-              </label>
-            ))}
-          </div>
-          {errors.type && (
-            <p className="mt-2 text-sm text-destructive">{errors.type.message}</p>
-          )}
-        </div>
-
-        {/* Amount */}
-        <div className="p-6 rounded-2xl bg-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">Transaction Amount</h3>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+          <h3 className="text-sm font-semibold mb-4">Transaction Details (API fields)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Input
-              {...register('amount', { valueAsNumber: true })}
+              {...register('step', { valueAsNumber: true })}
               type="number"
-              step="0.01"
-              placeholder="0.00"
-              className="pl-8 text-lg"
-              error={errors.amount?.message}
+              label="step"
+              placeholder="1"
+              error={errors.step?.message}
             />
+            <div className="md:col-span-2">
+              <h4 className="text-xs font-medium text-muted-foreground mb-2">type</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {transactionTypes.map((type) => (
+                  <label
+                    key={type.value}
+                    className="relative flex items-center justify-center p-3 rounded-xl border border-border cursor-pointer transition-all hover:border-accent/50 has-[:checked]:border-accent has-[:checked]:bg-accent/5"
+                  >
+                    <input
+                      type="radio"
+                      {...register('type')}
+                      value={type.value}
+                      className="absolute opacity-0"
+                    />
+                    <span className="text-sm font-medium">{type.label}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.type && (
+                <p className="mt-2 text-sm text-destructive">{errors.type.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Amount (amount) */}
+          <h4 className="text-xs font-medium text-muted-foreground mb-2">amount</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div className="col-span-2 relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                {...register('amount', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                className="pl-8 text-lg"
+                error={errors.amount?.message}
+              />
+            </div>
           </div>
         </div>
 
         {/* Sender Details */}
         <div className="p-6 rounded-2xl bg-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">Sender Details</h3>
+          <h3 className="text-sm font-semibold mb-4">Sender Details (nameOrig, oldbalanceOrg, newbalanceOrig)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               {...register('nameOrig')}
-              label="Account Name"
+              label="nameOrig"
               placeholder="C1234567890"
               error={errors.nameOrig?.message}
             />
@@ -146,7 +164,7 @@ const NewTransaction: React.FC = () => {
               {...register('oldBalanceOrig', { valueAsNumber: true })}
               type="number"
               step="0.01"
-              label="Balance Before"
+              label="oldbalanceOrg"
               placeholder="0.00"
               error={errors.oldBalanceOrig?.message}
             />
@@ -154,7 +172,7 @@ const NewTransaction: React.FC = () => {
               {...register('newBalanceOrig', { valueAsNumber: true })}
               type="number"
               step="0.01"
-              label="Balance After"
+              label="newbalanceOrig"
               placeholder="0.00"
               error={errors.newBalanceOrig?.message}
             />
@@ -163,11 +181,11 @@ const NewTransaction: React.FC = () => {
 
         {/* Receiver Details */}
         <div className="p-6 rounded-2xl bg-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">Receiver Details</h3>
+          <h3 className="text-sm font-semibold mb-4">Receiver Details (nameDest, oldbalanceDest, newbalanceDest)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
               {...register('nameDest')}
-              label="Account Name"
+              label="nameDest"
               placeholder="M9876543210"
               error={errors.nameDest?.message}
             />
@@ -175,7 +193,7 @@ const NewTransaction: React.FC = () => {
               {...register('oldBalanceDest', { valueAsNumber: true })}
               type="number"
               step="0.01"
-              label="Balance Before"
+              label="oldbalanceDest"
               placeholder="0.00"
               error={errors.oldBalanceDest?.message}
             />
@@ -183,7 +201,7 @@ const NewTransaction: React.FC = () => {
               {...register('newBalanceDest', { valueAsNumber: true })}
               type="number"
               step="0.01"
-              label="Balance After"
+              label="newbalanceDest"
               placeholder="0.00"
               error={errors.newBalanceDest?.message}
             />

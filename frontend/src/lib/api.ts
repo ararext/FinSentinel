@@ -27,12 +27,14 @@ const jsonRequest = async <T>(
   options: RequestInit
 ): Promise<ApiResponse<T>> => {
   try {
+    const mergedHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
       ...options,
+      headers: mergedHeaders,
     });
 
     const data = await response
@@ -170,15 +172,65 @@ export const transactionsApi = {
     return { success: false, error: 'Transaction not found' };
   },
 
-  create: async (data: TransactionFormData): Promise<ApiResponse<Transaction>> => {
-    await delay(600);
-    const newTransaction = generateMockTransaction({
-      ...data,
-      status: 'pending',
-      timestamp: new Date().toISOString(),
+  create: async (
+    data: TransactionFormData
+  ): Promise<
+    ApiResponse<{
+      fraud_prediction: boolean;
+      fraud_score: number;
+      explanation: string[];
+    }>
+  > => {
+    let token: string | null = null;
+    try {
+      const stored = localStorage.getItem('fraudshield_auth');
+      if (stored) {
+        const parsed = JSON.parse(stored) as { token?: string };
+        if (parsed.token) {
+          token = parsed.token;
+        }
+      }
+    } catch {
+      // If parsing fails, we just proceed without a token
+    }
+
+    const payload = {
+      step: data.step,
+      type: data.type,
+      amount: data.amount,
+      nameOrig: data.nameOrig,
+      oldbalanceOrg: data.oldBalanceOrig,
+      newbalanceOrig: data.newBalanceOrig,
+      nameDest: data.nameDest,
+      oldbalanceDest: data.oldBalanceDest,
+      newbalanceDest: data.newBalanceDest,
+    };
+
+    const numericValues = [
+      payload.step,
+      payload.amount,
+      payload.oldbalanceOrg,
+      payload.newbalanceOrig,
+      payload.oldbalanceDest,
+      payload.newbalanceDest,
+    ];
+
+    if (!numericValues.every((v) => Number.isFinite(v))) {
+      return {
+        success: false,
+        error: 'Please fill in all numeric fields with valid numbers.',
+      };
+    }
+
+    return jsonRequest('/transaction', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
     });
-    mockTransactions.unshift(newTransaction);
-    return { success: true, data: newTransaction, message: 'Transaction created successfully' };
   },
 
   getLive: async (): Promise<ApiResponse<Transaction[]>> => {
