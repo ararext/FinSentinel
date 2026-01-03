@@ -114,8 +114,7 @@ const Signup: React.FC = () => {
                   error={errors.password?.message}
                 />
               </div>
-
-              {/* <div className="relative">
+              <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
                   {...register('confirmPassword')}
@@ -124,7 +123,7 @@ const Signup: React.FC = () => {
                   className="pl-11"
                   error={errors.confirmPassword?.message}
                 />
-              </div> */}
+              </div>
             </div>
 
             <Button 

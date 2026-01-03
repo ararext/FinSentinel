@@ -19,60 +19,114 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-// Simulated network delay
+// Simulated network delay (still used for mock-only endpoints)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const jsonRequest = async <T>(
+  path: string,
+  options: RequestInit
+): Promise<ApiResponse<T>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+
+    const data = await response
+      .json()
+      .catch(() => undefined as unknown as T & { detail?: string });
+
+    if (!response.ok) {
+      const errorMessage =
+        (data as unknown as { detail?: string })?.detail ||
+        'Request failed';
+      return { success: false, error: errorMessage };
+    }
+
+    return { success: true, data: data as T };
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Network error. Please try again.',
+    };
+  }
+};
 
 // Auth API
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<{ user: User; token: string }>> => {
-    await delay(800);
-    
-    // Mock validation
-    if (credentials.email === 'demo@fraudshield.ai' && credentials.password === 'demo123') {
-      const user: User = {
-        id: '1',
-        email: credentials.email,
-        name: 'Demo User',
-        role: 'analyst',
-      };
-      return {
-        success: true,
-        data: {
-          user,
-          token: 'mock-jwt-token-' + Math.random().toString(36).substring(7),
-        },
-      };
-    }
-    
-    return {
-      success: false,
-      error: 'Invalid email or password',
-    };
-  },
+    const result = await jsonRequest<{ access_token: string }>(
+      '/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+        }),
+      }
+    );
 
-  logout: async (): Promise<ApiResponse<null>> => {
-    await delay(300);
-    return { success: true };
-  },
-
-  signup: async (credentials: SignupCredentials): Promise<ApiResponse<{ user: User }>> => {
-    await delay(800);
-    
-    // Mock validation - simulate email already exists
-    if (credentials.email === 'demo@fraudshield.ai') {
+    if (!result.success || !result.data) {
       return {
         success: false,
-        error: 'An account with this email already exists',
+        error: result.error || 'Invalid email or password',
       };
     }
-    
+
     const user: User = {
-      id: Math.random().toString(36).substring(7),
+      // Backend does not currently expose user details on login,
+      // so we derive a reasonable frontend representation.
+      id: 'current-user',
       email: credentials.email,
       name: credentials.email.split('@')[0],
       role: 'analyst',
     };
-    
+
+    return {
+      success: true,
+      data: {
+        user,
+        token: result.data.access_token,
+      },
+    };
+  },
+
+  logout: async (): Promise<ApiResponse<null>> => {
+    // Logout is handled entirely client-side; this is kept
+    // for API symmetry and future extensibility.
+    return { success: true };
+  },
+
+  signup: async (credentials: SignupCredentials): Promise<ApiResponse<{ user: User }>> => {
+    const result = await jsonRequest<{ id: string }>(
+      '/register',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+        }),
+      }
+    );
+
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error:
+          result.error || 'Signup failed. Please try again.',
+      };
+    }
+
+    const user: User = {
+      id: result.data.id,
+      email: credentials.email,
+      name: credentials.email.split('@')[0],
+      role: 'analyst',
+    };
+
     return {
       success: true,
       data: { user },
@@ -80,19 +134,10 @@ export const authApi = {
   },
 
   verifyToken: async (token: string): Promise<ApiResponse<User>> => {
-    await delay(200);
-    if (token.startsWith('mock-jwt-token-')) {
-      return {
-        success: true,
-        data: {
-          id: '1',
-          email: 'demo@fraudshield.ai',
-          name: 'Demo User',
-          role: 'analyst',
-        },
-      };
-    }
-    return { success: false, error: 'Invalid token' };
+    // Backend does not expose a dedicated token verification
+    // endpoint. Token handling is done client-side via
+    // persisted auth state in the AuthContext.
+    return { success: false, error: 'Token verification not supported' };
   },
 };
 
