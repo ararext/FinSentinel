@@ -1,4 +1,4 @@
-import { Transaction, FraudAnalysis, DashboardStats, TransactionType, RiskLevel } from './types';
+import { Transaction, FraudAnalysis, DashboardStats, TransactionType, RiskLevel, Notification } from './types';
 
 const transactionTypes: TransactionType[] = ['PAYMENT', 'TRANSFER', 'CASH_OUT', 'CASH_IN', 'DEBIT'];
 
@@ -97,3 +97,41 @@ export const mockDashboardStats: DashboardStats = {
   avgRiskScore: 23.5,
   recentAlerts: 12,
 };
+
+export const mockNotifications: Notification[] = [
+  {
+    id: '1',
+    message: 'Transaction flagged as suspicious',
+    time: '2 minutes ago',
+    severity: 'high',
+    read: false,
+  },
+  {
+    id: '2',
+    message: 'High-risk transaction detected',
+    time: '15 minutes ago',
+    severity: 'high',
+    read: false,
+  },
+  {
+    id: '3',
+    message: 'Fraud explanation generated',
+    time: '1 hour ago',
+    severity: 'medium',
+    read: true,
+  },
+  {
+    id: '4',
+    message: 'New transaction requires review',
+    time: '2 hours ago',
+    severity: 'medium',
+    read: true,
+  },
+  {
+    id: '5',
+    message: 'System scan completed successfully',
+    time: '3 hours ago',
+    severity: 'low',
+    read: true,
+  },
+];

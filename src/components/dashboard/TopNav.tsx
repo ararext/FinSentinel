@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import NotificationDropdown from './NotificationDropdown';
+import { notificationsApi } from '@/lib/api';
+import { Notification } from '@/lib/types';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -15,6 +17,17 @@ const pageTitles: Record<string, string> = {
 const TopNav: React.FC = () => {
   const location = useLocation();
   const title = pageTitles[location.pathname] || 'Dashboard';
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const result = await notificationsApi.getNotifications();
+      if (result.success && result.data) {
+        setNotifications(result.data);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   return (
     <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-40">
@@ -30,10 +43,7 @@ const TopNav: React.FC = () => {
             />
           </div>
           
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger" />
-          </Button>
+          <NotificationDropdown notifications={notifications} />
         </div>
       </div>
     </header>

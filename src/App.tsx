@@ -8,6 +8,7 @@ import DashboardLayout from "@/layouts/DashboardLayout";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import NewTransaction from "./pages/dashboard/NewTransaction";
 import LiveStream from "./pages/dashboard/LiveStream";
@@ -26,6 +27,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               
               {/* Protected Dashboard Routes */}
               <Route
