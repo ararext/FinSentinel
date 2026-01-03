@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+python-jose
+passlib[bcrypt]
+# Pin bcrypt to a version compatible with passlib's bcrypt backend
+bcrypt==4.0.1
+prisma
+aiofiles
+scikit-learn
+joblib
+pinecone
+openai
+pydantic[email]
+xgboost

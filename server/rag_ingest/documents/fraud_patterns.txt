@@ -1,0 +1,2 @@
+Fraudulent agents drain customer accounts via TRANSFER followed by CASH-OUT.
+Large transfers to new destination accounts are suspicious.

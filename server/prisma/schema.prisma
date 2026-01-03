@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-py"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+}
+
+model PredictionLog {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Float
+  isFraud     Boolean
+  explanation String
+  createdAt   DateTime @default(now())
+}
