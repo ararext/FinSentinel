@@ -12,12 +12,30 @@ const badgeVariants = cva(
         secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        success: "border-transparent bg-success text-success-foreground",
+        warning: "border-transparent bg-warning text-warning-foreground",
+        danger: "border-transparent bg-danger text-danger-foreground",
+        accent: "border-transparent bg-accent text-accent-foreground",
+        // Risk level variants
+        "risk-low": "border-transparent bg-success/20 text-success",
+        "risk-medium": "border-transparent bg-warning/20 text-warning",
+        "risk-high": "border-transparent bg-destructive/20 text-destructive",
+        // Transaction type variants
+        payment: "border-transparent bg-accent/20 text-accent",
+        transfer: "border-transparent bg-primary/20 text-primary",
+        "cash-out": "border-transparent bg-warning/20 text-warning",
+        "cash-in": "border-transparent bg-success/20 text-success",
+        debit: "border-transparent bg-muted text-muted-foreground",
+        // Status variants
+        pending: "border-transparent bg-warning/20 text-warning animate-pulse",
+        processed: "border-transparent bg-success/20 text-success",
+        flagged: "border-transparent bg-destructive/20 text-destructive",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  },
+  }
 );
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
