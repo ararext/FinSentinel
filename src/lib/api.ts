@@ -3,15 +3,18 @@ import {
   TransactionFormData, 
   FraudAnalysis, 
   LoginCredentials, 
+  SignupCredentials,
   User, 
   ApiResponse,
-  DashboardStats 
+  DashboardStats,
+  Notification
 } from './types';
 import { 
   mockTransactions, 
   generateMockTransaction, 
   generateMockFraudAnalysis,
-  mockDashboardStats 
+  mockDashboardStats,
+  mockNotifications
 } from './mockData';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -52,6 +55,30 @@ export const authApi = {
     return { success: true };
   },
 
+  signup: async (credentials: SignupCredentials): Promise<ApiResponse<{ user: User }>> => {
+    await delay(800);
+    
+    // Mock validation - simulate email already exists
+    if (credentials.email === 'demo@fraudshield.ai') {
+      return {
+        success: false,
+        error: 'An account with this email already exists',
+      };
+    }
+    
+    const user: User = {
+      id: Math.random().toString(36).substring(7),
+      email: credentials.email,
+      name: credentials.email.split('@')[0],
+      role: 'analyst',
+    };
+    
+    return {
+      success: true,
+      data: { user },
+    };
+  },
+
   verifyToken: async (token: string): Promise<ApiResponse<User>> => {
     await delay(200);
     if (token.startsWith('mock-jwt-token-')) {
@@ -66,6 +93,14 @@ export const authApi = {
       };
     }
     return { success: false, error: 'Invalid token' };
+  },
+};
+
+// Notifications API
+export const notificationsApi = {
+  getNotifications: async (): Promise<ApiResponse<Notification[]>> => {
+    await delay(300);
+    return { success: true, data: mockNotifications };
   },
 };
 

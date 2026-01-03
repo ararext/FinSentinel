@@ -66,6 +66,22 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface SignupCredentials {
+  email: string;
+  password: string;
+}
+
+// Notification Types
+export type NotificationSeverity = 'low' | 'medium' | 'high';
+
+export interface Notification {
+  id: string;
+  message: string;
+  time: string;
+  severity: NotificationSeverity;
+  read: boolean;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
   success: boolean;

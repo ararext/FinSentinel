@@ -6,49 +6,51 @@ import { z } from 'zod';
 import { Shield, ArrowLeft, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToastNotification } from '@/components/Toast';
-import { LoginCredentials } from '@/lib/types';
+import { authApi } from '@/lib/api';
 
-const loginSchema = z.object({
+const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type SignupFormData = z.infer<typeof signupSchema>;
 
-const Login: React.FC = () => {
+const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
   const toast = useToastNotification();
+  const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'demo@fraudshield.ai',
-      password: 'demo123',
-    },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     setAuthError(null);
-    const credentials: LoginCredentials = {
+    setIsLoading(true);
+    
+    const result = await authApi.signup({
       email: data.email,
       password: data.password,
-    };
-    const result = await login(credentials);
+    });
+    
+    setIsLoading(false);
     
     if (result.success) {
-      toast.success('Welcome back!', 'You have been logged in successfully.');
-      navigate('/dashboard');
+      toast.success('Account created!', 'Please sign in with your credentials.');
+      navigate('/login');
     } else {
-      setAuthError(result.error || 'Login failed. Please try again.');
-      toast.error('Login failed', result.error || 'Please check your credentials.');
+      setAuthError(result.error || 'Signup failed. Please try again.');
+      toast.error('Signup failed', result.error || 'Please try again.');
     }
   };
 
@@ -75,10 +77,10 @@ const Login: React.FC = () => {
               <span className="font-display font-semibold text-xl">FraudShield</span>
             </div>
             <h1 className="text-3xl font-display font-light tracking-tight mb-2">
-              Welcome back
+              Create your account
             </h1>
             <p className="text-muted-foreground">
-              Sign in to access your fraud detection dashboard.
+              Get started with AI-powered fraud detection.
             </p>
           </div>
 
@@ -112,6 +114,17 @@ const Login: React.FC = () => {
                   error={errors.password?.message}
                 />
               </div>
+
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                <Input
+                  {...register('confirmPassword')}
+                  type="password"
+                  placeholder="Confirm password"
+                  className="pl-11"
+                  error={errors.confirmPassword?.message}
+                />
+              </div>
             </div>
 
             <Button 
@@ -121,18 +134,14 @@ const Login: React.FC = () => {
               className="w-full"
               isLoading={isLoading}
             >
-              Sign In
+              Create Account
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/signup" className="text-accent hover:underline">
-                Create one
+              Already have an account?{' '}
+              <Link to="/login" className="text-accent hover:underline">
+                Sign in
               </Link>
-            </p>
-
-            <p className="text-center text-xs text-muted-foreground">
-              Demo credentials are pre-filled for testing.
             </p>
           </form>
         </div>
@@ -157,4 +166,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Signup;
