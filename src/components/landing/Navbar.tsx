@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
               <Shield className="w-5 h-5 text-accent-foreground" />
             </div>
-            <span className="font-display font-semibold text-lg">Fraud Sentinel</span>
+            <span className="font-display font-semibold text-lg">FinSentinel</span>
           </Link>
 
           {/* Right side */}

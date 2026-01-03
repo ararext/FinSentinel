@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
             <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center">
               <Shield className="w-4 h-4 text-accent-foreground" />
             </div>
-            <span className="font-display font-semibold">Fraud Sentinel</span>
+            <span className="font-display font-semibold">FinSentinel</span>
           </div>
           
           <p className="text-sm text-muted-foreground">
