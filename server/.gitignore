@@ -1,0 +1,19 @@
+.env
+# Large data
+*.csv
+*.parquet
+*.pkl
+*.joblib
+*.bin
+
+# ML / Pathway
+models/
+data/
+cache/
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+.env

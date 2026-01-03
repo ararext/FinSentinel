@@ -1,0 +1,3 @@
+Transfers above 200000 with near-zero sender balance are high-risk.
+Multiple cash-outs after a transfer indicate fraud.
+Merchant accounts usually start with letter M.
