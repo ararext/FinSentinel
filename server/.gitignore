@@ -7,7 +7,6 @@
 *.bin
 
 # ML / Pathway
-models/
 data/
 cache/
 
