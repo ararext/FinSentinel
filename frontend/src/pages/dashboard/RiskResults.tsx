@@ -43,7 +43,7 @@ const RiskResults: React.FC = () => {
     setSelectedTransaction(tx);
     setIsLoadingAnalysis(true);
     
-    const result = await fraudApi.analyze(tx.id);
+    const result = await fraudApi.analyze(tx);
     if (result.success && result.data) {
       setAnalysis(result.data);
     }

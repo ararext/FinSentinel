@@ -7,7 +7,9 @@ import {
   User, 
   ApiResponse,
   DashboardStats,
-  Notification
+  Notification,
+  RiskLevel,
+  RiskFactor,
 } from './types';
 import { 
   mockTransactions, 
@@ -245,9 +247,114 @@ export const transactionsApi = {
 
 // Fraud Analysis API
 export const fraudApi = {
-  analyze: async (transactionId: string): Promise<ApiResponse<FraudAnalysis>> => {
-    await delay(1200);
-    const analysis = generateMockFraudAnalysis(transactionId);
+  analyze: async (transaction: Transaction): Promise<ApiResponse<FraudAnalysis>> => {
+    // Reuse the backend ML + RAG pipeline without mutating
+    // CSV or database state via the /analyze endpoint.
+
+    let token: string | null = null;
+    try {
+      const stored = localStorage.getItem('fraudshield_auth');
+      if (stored) {
+        const parsed = JSON.parse(stored) as { token?: string };
+        if (parsed.token) {
+          token = parsed.token;
+        }
+      }
+    } catch {
+      // If parsing fails, proceed without a token
+    }
+
+    const payload = {
+      // `step` is required by the backend model; dashboard
+      // transactions don't carry it, so we treat them as
+      // single-step events.
+      step: 1,
+      type: transaction.type,
+      amount: transaction.amount,
+      nameOrig: transaction.nameOrig,
+      oldbalanceOrg: transaction.oldBalanceOrig,
+      newbalanceOrig: transaction.newBalanceOrig,
+      nameDest: transaction.nameDest,
+      oldbalanceDest: transaction.oldBalanceDest,
+      newbalanceDest: transaction.newBalanceDest,
+    };
+
+    const result = await jsonRequest<{
+      fraud_prediction: boolean;
+      fraud_score: number;
+      explanation: string[];
+    }>('/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    });
+
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || 'Failed to run fraud analysis.',
+      };
+    }
+
+    const rawScore = result.data.fraud_score ?? 0;
+    const scorePercent = Math.max(0, Math.min(100, rawScore * 100));
+
+    let riskLevel: RiskLevel;
+    if (scorePercent < 30) riskLevel = 'low';
+    else if (scorePercent < 70) riskLevel = 'medium';
+    else riskLevel = 'high';
+
+    const explanationLines = (result.data.explanation || []).filter(line => line && line.trim().length > 0);
+    const summary = explanationLines.join(' ');
+
+    const baseWeight = explanationLines.length ? 1 / explanationLines.length : 0.2;
+
+    const factors: RiskFactor[] = explanationLines.map((line, idx) => {
+      const text = line.trim();
+      const lowered = text.toLowerCase();
+
+      let impact: RiskFactor['impact'] = 'neutral';
+      if (
+        lowered.includes('higher') ||
+        lowered.includes('unusual') ||
+        lowered.includes('suspicious') ||
+        lowered.includes('risk') ||
+        lowered.includes('flagged') ||
+        lowered.includes('anomaly')
+      ) {
+        impact = 'negative';
+      } else if (
+        lowered.includes('within normal') ||
+        lowered.includes('known') ||
+        lowered.includes('established') ||
+        lowered.includes('consistent') ||
+        lowered.includes('low risk')
+      ) {
+        impact = 'positive';
+      }
+
+      return {
+        title: `Factor ${idx + 1}`,
+        description: text,
+        impact,
+        weight: baseWeight,
+      };
+    });
+
+    const analysis: FraudAnalysis = {
+      id: `${transaction.id}-analysis`,
+      transactionId: transaction.id,
+      riskLevel,
+      riskScore: Number(scorePercent.toFixed(1)),
+      explanation: summary,
+      factors,
+      timestamp: new Date().toISOString(),
+    };
+
     return { success: true, data: analysis };
   },
 

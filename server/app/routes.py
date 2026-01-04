@@ -6,6 +6,8 @@ from app.schemas import Register, Login, Transaction, PathwayResult
 from app.services import register_user, login_user, handle_transaction
 from app.deps import get_current_user
 from app.db import db
+from app.ml import predict
+from app.rag import explain
 
 router = APIRouter()
 
@@ -55,6 +57,31 @@ async def pathway_result(
     )
 
     return {"status": "received"}
+
+
+@router.post("/analyze")
+async def analyze_transaction(
+    tx: Transaction,
+    user_id: str = Depends(get_current_user),  # noqa: ARG001 - reserved for future personalization
+):
+    """Run fraud analysis without mutating state.
+
+    This endpoint mirrors the core ML + RAG pipeline used in
+    `/transaction` but does **not** append to CSV or write to
+    the database. It is intended for interactive risk analysis
+    in the dashboard.
+    """
+
+    tx_dict = tx.dict()
+
+    fraud, score = predict(tx_dict)
+    explanation_lines = explain(tx_dict, fraud, score)
+
+    return {
+        "fraud_prediction": fraud,
+        "fraud_score": score,
+        "explanation": explanation_lines,
+    }
 
 
 @router.get("/transactions/live")
