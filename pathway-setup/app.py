@@ -1,5 +1,7 @@
 import os
-
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 import pathway as pw
 
 from pipeline import build_pipeline
@@ -17,6 +19,8 @@ CSV_PATH = os.path.join(
 
 
 def main():
+    print("Starting Pathway pipeline; watching transactions at:", CSV_PATH)
+
     transactions = pw.io.csv.read(
         CSV_PATH,
         schema=TransactionSchema,

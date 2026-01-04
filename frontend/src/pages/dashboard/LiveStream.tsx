@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Radio, Pause, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { generateMockTransaction } from '@/lib/mockData';
 
 const LiveStream: React.FC = () => {
   const navigate = useNavigate();
@@ -30,13 +29,17 @@ const LiveStream: React.FC = () => {
 
   useEffect(() => {
     if (isStreaming) {
-      intervalRef.current = setInterval(() => {
-        const newTx = generateMockTransaction({
-          timestamp: new Date().toISOString(),
-          status: 'pending',
-        });
-        setTransactions(prev => [newTx, ...prev].slice(0, 50));
-      }, 2500);
+      const poll = async () => {
+        const result = await transactionsApi.getLive();
+        if (result.success && result.data) {
+          setTransactions(result.data);
+        }
+      };
+
+      // Initial poll when streaming starts
+      poll();
+
+      intervalRef.current = setInterval(poll, 2500);
     }
 
     return () => {

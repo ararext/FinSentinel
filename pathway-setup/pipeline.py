@@ -1,17 +1,22 @@
+import pathway as pw
+
 from features import build_features
 
 
 def build_pipeline(transactions):
     """Build the Pathway computation graph for transactions.
 
-    For now we only construct the feature view; Pathway will execute
-    it when `pw.run()` is called in app.py. The previous
-    `features.print()` call was invalid because Pathway tables don't
-    expose a `.print()` method and was causing the runtime error.
+    We construct a feature view and attach a simple sink that writes
+    the live stream of features to a JSONL file. When ``pw.run()`` is
+    called in ``app.py``, Pathway will continuously watch the
+    ``transactions.csv`` file for new rows and append the corresponding
+    feature rows to ``pathway_output.jsonl``.
     """
 
     features = build_features(transactions)
-    # If you want to inspect the live stream, you can later plug this
-    # into a proper sink (e.g. pw.io.csv.write, pw.io.jsonlines.write,
-    # or a custom connector). For now, just return the features table.
+
+    # Persist the live feature stream so you can inspect it and wire it
+    # into the backend/frontend later.
+    pw.io.jsonlines.write(features, "pathway_output.jsonl")
+
     return features

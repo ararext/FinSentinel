@@ -234,14 +234,12 @@ export const transactionsApi = {
   },
 
   getLive: async (): Promise<ApiResponse<Transaction[]>> => {
-    await delay(200);
-    // Return the 10 most recent transactions
-    return {
-      success: true,
-      data: [...mockTransactions]
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 10),
-    };
+    return jsonRequest<Transaction[]>(
+      '/transactions/live',
+      {
+        method: 'GET',
+      }
+    );
   },
 };
 
