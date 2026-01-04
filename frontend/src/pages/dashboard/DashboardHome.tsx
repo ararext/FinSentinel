@@ -12,24 +12,54 @@ const DashboardHome: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    let isMounted = true;
+
+    const fetchData = async (withLoading: boolean) => {
+      if (!isMounted) return;
+
+      if (withLoading) {
+        setIsLoading(true);
+      }
+
       try {
         const [statsRes, txRes] = await Promise.all([
           dashboardApi.getStats(),
           transactionsApi.getAll(),
         ]);
-        
-        if (statsRes.success && statsRes.data) setStats(statsRes.data);
-        if (txRes.success && txRes.data) setTransactions(txRes.data.slice(0, 10));
+
+        if (!isMounted) return;
+
+        if (statsRes.success && statsRes.data) {
+          setStats(statsRes.data);
+        }
+
+        if (txRes.success && txRes.data) {
+          setTransactions(txRes.data.slice(0, 10));
+        }
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        if (isMounted) {
+          console.error('Failed to fetch dashboard data:', error);
+        }
       } finally {
-        setIsLoading(false);
+        if (withLoading && isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchData();
+    // Initial load with skeletons
+    void fetchData(true);
+
+    // Poll periodically so the dashboard stays in sync
+    // with the live transaction stream.
+    const intervalId = window.setInterval(() => {
+      void fetchData(false);
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   const handleSelectTransaction = (tx: Transaction) => {

@@ -156,13 +156,25 @@ export const notificationsApi = {
 // Transactions API
 export const transactionsApi = {
   getAll: async (): Promise<ApiResponse<Transaction[]>> => {
-    await delay(500);
-    return {
-      success: true,
-      data: [...mockTransactions].sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ),
-    };
+    // Use the live transactions endpoint so the main
+    // dashboard always reflects real, up-to-date data.
+    const result = await jsonRequest<Transaction[]>(
+      '/transactions/live?limit=200',
+      {
+        method: 'GET',
+      }
+    );
+
+    if (!result.success || !result.data) {
+      return result;
+    }
+
+    // Sort newest first to match the existing UI expectation.
+    const sorted = [...result.data].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    return { success: true, data: sorted };
   },
 
   getById: async (id: string): Promise<ApiResponse<Transaction>> => {
@@ -380,7 +392,38 @@ export const fraudApi = {
 // Dashboard API
 export const dashboardApi = {
   getStats: async (): Promise<ApiResponse<DashboardStats>> => {
-    await delay(400);
-    return { success: true, data: mockDashboardStats };
+    // Derive dashboard statistics directly from the live
+    // transactions so the summary cards reflect real data.
+    const txResult = await transactionsApi.getAll();
+
+    if (!txResult.success || !txResult.data) {
+      return {
+        success: false,
+        error: txResult.error || 'Failed to load dashboard statistics.',
+      };
+    }
+
+    const txs = txResult.data;
+
+    const totalTransactions = txs.length;
+    const flaggedTransactions = txs.filter((t) => t.status === 'flagged').length;
+    const totalVolume = txs.reduce((sum, t) => sum + t.amount, 0);
+
+    // Approximate average risk as the percentage of
+    // flagged transactions in the current window.
+    const avgRiskScore = totalTransactions
+      ? Number(((flaggedTransactions / totalTransactions) * 100).toFixed(1))
+      : 0;
+
+    const stats: DashboardStats = {
+      totalTransactions,
+      flaggedTransactions,
+      totalVolume,
+      avgRiskScore,
+      // Treat flagged transactions as active alerts for now.
+      recentAlerts: flaggedTransactions,
+    };
+
+    return { success: true, data: stats };
   },
 };
