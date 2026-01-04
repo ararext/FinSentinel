@@ -304,9 +304,13 @@ export const fraudApi = {
     const scorePercent = Math.max(0, Math.min(100, rawScore * 100));
 
     let riskLevel: RiskLevel;
-    if (scorePercent < 30) riskLevel = 'low';
-    else if (scorePercent < 70) riskLevel = 'medium';
-    else riskLevel = 'high';
+    if (scorePercent <= 5) {
+      riskLevel = 'low';
+    } else if (scorePercent < 65) {
+      riskLevel = 'medium';
+    } else {
+      riskLevel = 'high';
+    }
 
     const explanationLines = (result.data.explanation || []).filter(line => line && line.trim().length > 0);
     const summary = explanationLines.join(' ');

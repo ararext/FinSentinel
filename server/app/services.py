@@ -23,14 +23,20 @@ async def login_user(email, password):
     return create_token(user.id)
 
 async def handle_transaction(user_id, tx):
-    # 1) Append to CSV so that Pathway can pick it up as a new event.
-    await append_csv(tx)
-
-    # 2) Run per-transaction ML inference (no label features used).
+    # 1) Run per-transaction ML inference (no label features used).
     fraud, score = predict(tx)
 
-    # 3) Generate a RAG-based explanation for the model decision.
+    # 2) Generate a RAG-based explanation for the model decision.
     explanation = explain(tx, fraud, score)
+
+    # 3) Persist the model decision into the CSV so that downstream
+    #    consumers (Pathway, live dashboard) can see flagged rows.
+    #    The ML model does not use `isFraud` / `isFlaggedFraud` as
+    #    inputs, so annotating them post-prediction is safe.
+    tx["isFraud"] = int(bool(fraud))
+    tx["isFlaggedFraud"] = int(bool(fraud and score >= 0.65))
+
+    await append_csv(tx)
 
     await db.predictionlog.create(
         data={

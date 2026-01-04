@@ -18,25 +18,42 @@ const RiskResults: React.FC = () => {
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      setIsLoadingTx(true);
-      const result = await transactionsApi.getAll();
-      if (result.success && result.data) {
-        const flaggedTx = result.data.filter(tx => tx.status === 'flagged' || tx.status === 'processed');
-        setTransactions(flaggedTx.slice(0, 20));
-        
-        // Auto-select if ID provided
+    let isMounted = true;
+
+    const fetchTransactions = async (showLoading: boolean) => {
+      if (!isMounted) return;
+      if (showLoading) {
+        setIsLoadingTx(true);
+      }
+      const result = await transactionsApi.getLive();
+      if (result.success && result.data && isMounted) {
+        const liveTx = result.data;
+        setTransactions(liveTx);
+
+        // Auto-select if ID provided from query string
         if (selectedId) {
-          const found = result.data.find(tx => tx.id === selectedId);
+          const found = liveTx.find((tx) => tx.id === selectedId);
           if (found) {
             handleSelectTransaction(found);
           }
         }
       }
-      setIsLoadingTx(false);
+      if (isMounted && showLoading) {
+        setIsLoadingTx(false);
+      }
     };
 
-    fetchTransactions();
+    // Initial fetch
+    fetchTransactions(true);
+
+    // Keep Risk Results in sync with the Live Stream by polling
+    // the same backend endpoint on a fixed interval.
+    const intervalId = setInterval(() => fetchTransactions(false), 2500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, [selectedId]);
 
   const handleSelectTransaction = async (tx: Transaction) => {

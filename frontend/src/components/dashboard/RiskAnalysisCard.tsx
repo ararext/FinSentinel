@@ -2,7 +2,7 @@ import React from 'react';
 import { FraudAnalysis } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface RiskAnalysisCardProps {
   analysis: FraudAnalysis;
@@ -29,18 +29,6 @@ const riskBadgeVariants: Record<string, RiskBadgeVariant> = {
   high: 'risk-high',
 };
 
-const impactIcons = {
-  positive: CheckCircle2,
-  negative: AlertTriangle,
-  neutral: Info,
-};
-
-const impactColors = {
-  positive: 'text-success',
-  negative: 'text-destructive',
-  neutral: 'text-muted-foreground',
-};
-
 const RiskAnalysisCard: React.FC<RiskAnalysisCardProps> = ({ analysis, isLoading }) => {
   if (isLoading) {
     return (
@@ -63,7 +51,9 @@ const RiskAnalysisCard: React.FC<RiskAnalysisCardProps> = ({ analysis, isLoading
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Risk Analysis</h3>
           <Badge variant={riskBadgeVariants[analysis.riskLevel]}>
-            {analysis.riskLevel.toUpperCase()} RISK
+            {analysis.riskScore <= 0.05
+              ? 'NO RISK'
+              : `${analysis.riskLevel.toUpperCase()} RISK`}
           </Badge>
         </div>
 
@@ -85,7 +75,7 @@ const RiskAnalysisCard: React.FC<RiskAnalysisCardProps> = ({ analysis, isLoading
       </div>
 
       {/* AI Explanation */}
-      <div className="p-6 border-b border-border bg-muted/30">
+      <div className="p-6 bg-muted/30">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
             <Info className="w-4 h-4 text-accent" />
@@ -95,39 +85,6 @@ const RiskAnalysisCard: React.FC<RiskAnalysisCardProps> = ({ analysis, isLoading
         <p className="text-sm text-muted-foreground leading-relaxed">
           {analysis.explanation}
         </p>
-      </div>
-
-      {/* Risk Factors */}
-      <div className="p-6">
-        <h4 className="text-sm font-semibold mb-4">Contributing Factors</h4>
-        <div className="space-y-3">
-          {analysis.factors.map((factor, idx) => {
-            const Icon = impactIcons[factor.impact];
-            return (
-              <div
-                key={idx}
-                className="p-4 rounded-xl bg-muted/30 border border-border"
-              >
-                <div className="flex items-start gap-3">
-                  <div className={cn('mt-0.5', impactColors[factor.impact])}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-sm font-medium">{factor.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Weight: {(factor.weight * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {factor.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
